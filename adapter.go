@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"net/url"
@@ -9,11 +8,13 @@ import (
 	"strings"
 )
 
-var ch *chan map[string]interface{}
+type M = map[string]interface{}
+
+var ch *chan M
 var token string
 var secret string
 
-func Boot(c *chan map[string]interface{}) {
+func Boot(c *chan M) {
 	ch = c
 	token = os.Getenv("LXBOT_KOKOROIO_ACCESSTOKEN")
 	secret = os.Getenv("LXBOT_KOKOROIO_CALLBACKSECRET")
@@ -21,14 +22,17 @@ func Boot(c *chan map[string]interface{}) {
 	go listen()
 }
 
-func Send(msg map[string]interface{}) {
-	channelId := msg["room"].(map[string]interface{})["id"].(string)
-	message := msg["message"].(map[string]interface{})["text"].(string)
+func Send(msg M) {
+	channelId := msg["room"].(M)["id"].(string)
+	message := msg["message"].(M)["text"].(string)
 	_ = send(channelId, message)
 }
 
-func Reply(msg map[string]interface{}) {
-
+func Reply(msg M) {
+	channelId := msg["room"].(M)["id"].(string)
+	user := msg["user"].(M)["id"].(string)
+	message := "@" + user + " " + msg["message"].(M)["text"].(string)
+	_ = send(channelId, message)
 }
 
 func send(channelId string, msg string) error {
@@ -41,7 +45,7 @@ func send(channelId string, msg string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", token)
+	req.Header.Set("X-Access-Token", token)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
@@ -66,26 +70,24 @@ func get(c echo.Context) error {
 }
 
 func post(c echo.Context) error {
-	m := map[string]interface{}{}
+	m := M{}
 	if err := c.Bind(&m); err != nil {
 		return c.NoContent(406)
 	}
 
 	resErr := c.NoContent(202)
 
-	fmt.Println(m)
-
-	*ch <- map[string]interface{}{
-		"user": map[string]interface{}{
-			"id": m["profile"].(map[string]interface{})["screen_name"],
+	*ch <- M{
+		"user": M{
+			"id": m["profile"].(M)["screen_name"],
 			"name": m["display_name"],
 		},
-		"room": map[string]interface{}{
-			"id": m["channel"].(map[string]interface{})["id"],
-			"name": m["channel"].(map[string]interface{})["channel_name"],
-			"description": m["channel"].(map[string]interface{})["description"],
+		"room": M{
+			"id": m["channel"].(M)["id"],
+			"name": m["channel"].(M)["channel_name"],
+			"description": m["channel"].(M)["description"],
 		},
-		"message": map[string]interface{}{
+		"message": M{
 			"id": m["id"],
 			"text": m["plaintext_content"],
 			"attachments": nil,
