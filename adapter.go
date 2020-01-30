@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -36,7 +37,7 @@ func Reply(msg M) {
 }
 
 func send(channelId string, msg string) error {
-	u := "https://kokoro.io/api/v1/bot/channels/"+channelId+"/messages"
+	u := "https://kokoro.io/api/v1/bot/channels/" + channelId + "/messages"
 
 	v := url.Values{}
 	v.Set("message", msg)
@@ -79,17 +80,17 @@ func post(c echo.Context) error {
 
 	*ch <- M{
 		"user": M{
-			"id": m["profile"].(M)["screen_name"],
+			"id":   m["profile"].(M)["screen_name"],
 			"name": m["display_name"],
 		},
 		"room": M{
-			"id": m["channel"].(M)["id"],
-			"name": m["channel"].(M)["channel_name"],
+			"id":          m["channel"].(M)["id"],
+			"name":        m["channel"].(M)["channel_name"],
 			"description": m["channel"].(M)["description"],
 		},
 		"message": M{
-			"id": m["id"],
-			"text": m["plaintext_content"],
+			"id":          strconv.Itoa(int(m["id"].(float64))),
+			"text":        m["plaintext_content"],
 			"attachments": nil,
 		},
 		"raw": m,
