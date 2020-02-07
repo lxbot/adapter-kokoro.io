@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/lxbot/lxlib"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,15 +26,25 @@ func Boot(c *chan M) {
 }
 
 func Send(msg M) {
-	channelId := msg["room"].(M)["id"].(string)
-	message := msg["message"].(M)["text"].(string)
+	m, err := lxlib.NewLXMessage(msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	channelId := m.Room.ID
+	message := m.Message.Text
 	_ = send(channelId, message)
 }
 
 func Reply(msg M) {
-	channelId := msg["room"].(M)["id"].(string)
-	user := msg["user"].(M)["id"].(string)
-	message := "@" + user + " " + msg["message"].(M)["text"].(string)
+	m, err := lxlib.NewLXMessage(msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	channelId := m.Room.ID
+	user := m.User.ID
+	message := "@" + user + " " + m.Message.Text
 	_ = send(channelId, message)
 }
 
