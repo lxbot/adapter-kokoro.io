@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type M = map[string]interface{}
@@ -16,11 +18,13 @@ type M = map[string]interface{}
 var ch *chan M
 var token string
 var secret string
+var startTime time.Time
 
 func Boot(c *chan M) {
 	ch = c
 	token = os.Getenv("LXBOT_KOKOROIO_ACCESSTOKEN")
 	secret = os.Getenv("LXBOT_KOKOROIO_CALLBACKSECRET")
+	startTime = time.Now()
 
 	go listen()
 }
@@ -79,7 +83,27 @@ func listen() {
 }
 
 func get(c echo.Context) error {
-	return c.NoContent(200)
+	ms :=  new(runtime.MemStats)
+	runtime.ReadMemStats(ms)
+
+	return c.HTML(http.StatusOK, `
+<!doctype html>
+<html>
+<head>
+<title>lxbot - adapter-kokoro.io</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css">
+</head>
+<body>
+<h1><a href="https://lxbot.io">lxbot</a> - <a href="https://github.com/lxbot/adapter-kokoro.io">adapter-kokoro.io</a></h1>
+<ul>
+<li>heap: ` + strconv.FormatUint(ms.HeapAlloc / 1024, 10) + ` / `+ strconv.FormatUint(ms.TotalAlloc / 1024, 10) + ` KB</li>
+<li>sys: ` + strconv.FormatUint(ms.Sys / 1024, 10) + ` KB</li>
+<li>goroutine: ` + strconv.Itoa(runtime.NumGoroutine()) + `</li>
+<li>uptime: ` + time.Since(startTime).String() + `</li>
+</ul>
+</body>
+</html>
+`)
 }
 
 func post(c echo.Context) error {
@@ -114,6 +138,7 @@ func post(c echo.Context) error {
 func authorize(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if c.Request().Header.Get("Authorization") != secret {
+			log.Println("invalid webhook secret")
 			return c.NoContent(401)
 		}
 		return next(c)
