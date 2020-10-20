@@ -96,7 +96,7 @@ func get(c echo.Context) error {
 <body>
 <h1><a href="https://lxbot.io">lxbot</a> - <a href="https://github.com/lxbot/adapter-kokoro.io">adapter-kokoro.io</a></h1>
 <ul>
-<li>heap: ` + strconv.FormatUint(ms.HeapAlloc / 1024, 10) + ` / `+ strconv.FormatUint(ms.TotalAlloc / 1024, 10) + ` KB</li>
+<li>heap: ` + strconv.FormatUint(ms.HeapAlloc / 1024, 10) + ` KB</li>
 <li>sys: ` + strconv.FormatUint(ms.Sys / 1024, 10) + ` KB</li>
 <li>goroutine: ` + strconv.Itoa(runtime.NumGoroutine()) + `</li>
 <li>uptime: ` + time.Since(startTime).String() + `</li>
